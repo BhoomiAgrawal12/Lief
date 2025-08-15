@@ -4,9 +4,8 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
   try {
-    // Create a proper response object for getSession
-    const res = new NextResponse();
-    const session = await getSession(req, res);
+    // For App Router, getSession() can be called without parameters
+    const session = await getSession();
     
     if (!session?.user) {
       return NextResponse.json({ user: null });
@@ -26,9 +25,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    // Create a proper response object for getSession
-    const res = new NextResponse();
-    const session = await getSession(req, res);
+    // For App Router, getSession() can be called without parameters
+    const session = await getSession();
     
     if (!session?.user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
