@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String        @id @default(cuid())
+  auth0Id        String        @unique
+  email          String        @unique
+  name           String?
+  role           Role          @default(CARE_WORKER)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  organizationId String?
+  shifts         Shift[]
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  @@map("users")
+}
+
+model Organization {
+  id              String   @id @default(cuid())
+  name            String
+  locationLat     Float
+  locationLng     Float
+  perimeterRadius Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  shifts          Shift[]
+  users           User[]
+
+  @@map("organizations")
+}
+
+model Shift {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  clockInTime    DateTime
+  clockInLat     Float
+  clockInLng     Float
+  clockInNote    String?
+  clockOutTime   DateTime?
+  clockOutLat    Float?
+  clockOutLng    Float?
+  clockOutNote   String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("shifts")
+}
+
+enum Role {
+  MANAGER
+  CARE_WORKER
+}
