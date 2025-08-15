@@ -18,9 +18,8 @@ export async function createContext(req: any): Promise<GraphQLContext> {
   };
 
   try {
-    // Create a proper response object for getSession
-    const res = new Response();
-    const session = await getSession(req, res);
+    // For App Router, getSession() can be called without parameters
+    const session = await getSession();
     
     if (session?.user) {
       context.user = {
