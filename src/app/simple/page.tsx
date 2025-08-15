@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useUser } from '@auth0/nextjs-auth0/client';
+import Link from 'next/link';
 
 export default function SimplePage() {
   const { user, isLoading, error } = useUser();
@@ -57,7 +58,7 @@ export default function SimplePage() {
 
         {!user && !isLoading && (
           <div>
-            <a 
+            <Link 
               href="/api/auth/login"
               style={{
                 display: 'inline-block',
@@ -70,7 +71,7 @@ export default function SimplePage() {
               }}
             >
               Get Started
-            </a>
+            </Link>
           </div>
         )}
 
@@ -92,7 +93,7 @@ export default function SimplePage() {
               >
                 Go to Dashboard
               </a>
-              <a 
+              <Link 
                 href="/api/auth/logout"
                 style={{
                   padding: '8px 16px',
@@ -103,7 +104,7 @@ export default function SimplePage() {
                 }}
               >
                 Logout
-              </a>
+              </Link>
             </div>
           </div>
         )}
