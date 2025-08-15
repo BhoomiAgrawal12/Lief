@@ -34,8 +34,13 @@ export async function POST(req: NextRequest) {
 
     const { name, role } = await req.json();
 
-    const user = await prisma.user.create({
-      data: {
+    const user = await prisma.user.upsert({
+      where: { auth0Id: session.user.sub },
+      update: {
+        name: name || session.user.name,
+        role,
+      },
+      create: {
         auth0Id: session.user.sub,
         email: session.user.email,
         name: name || session.user.name,
