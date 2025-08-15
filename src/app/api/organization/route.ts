@@ -2,11 +2,33 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@auth0/nextjs-auth0';
 import { prisma } from '@/lib/prisma';
 
+export async function GET(req: NextRequest) {
+  try {
+    // For App Router, getSession() can be called without parameters
+    const session = await getSession();
+    
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    const organizations = await prisma.organization.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    return NextResponse.json({ organizations });
+  } catch (error) {
+    console.error('Error fetching organizations:', error);
+    return NextResponse.json({ error: 'Failed to fetch organizations' }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
-    // Create a proper response object for getSession
-    const res = new NextResponse();
-    const session = await getSession(req, res);
+    // For App Router, getSession() can be called without parameters
+    const session = await getSession();
     
     if (!session?.user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });

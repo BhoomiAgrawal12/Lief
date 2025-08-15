@@ -32,19 +32,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const { name, role } = await req.json();
+    const { name, role, organizationId } = await req.json();
 
     const user = await prisma.user.upsert({
       where: { auth0Id: session.user.sub },
       update: {
         name: name || session.user.name,
         role,
+        organizationId: organizationId || undefined,
       },
       create: {
         auth0Id: session.user.sub,
         email: session.user.email,
         name: name || session.user.name,
         role,
+        organizationId: organizationId || undefined,
       },
     });
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@auth0/nextjs-auth0/client';
 import { Card, Form, Input, Select, Button, Typography, Space, message } from 'antd';
 import { useRouter } from 'next/navigation';
@@ -15,7 +15,29 @@ export default function SetupPage() {
   const [createOrgLoading, setCreateOrgLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [userRole, setUserRole] = useState<'MANAGER' | 'CARE_WORKER' | null>(null);
+  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [loadingOrgs, setLoadingOrgs] = useState(false);
   const router = useRouter();
+
+  // Fetch organizations when component mounts
+  useEffect(() => {
+    fetchOrganizations();
+  }, []);
+
+  const fetchOrganizations = async () => {
+    setLoadingOrgs(true);
+    try {
+      const response = await fetch('/api/organization');
+      const data = await response.json();
+      if (data.organizations) {
+        setOrganizations(data.organizations);
+      }
+    } catch (error) {
+      console.error('Error fetching organizations:', error);
+    } finally {
+      setLoadingOrgs(false);
+    }
+  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -35,6 +57,7 @@ export default function SetupPage() {
         body: JSON.stringify({
           name: values.name,
           role: values.role,
+          organizationId: values.organizationId,
         }),
       });
 
@@ -140,6 +163,32 @@ export default function SetupPage() {
                   <Option value="MANAGER">Manager</Option>
                   <Option value="CARE_WORKER">Care Worker</Option>
                 </Select>
+              </Form.Item>
+
+              <Form.Item noStyle shouldUpdate={(prevValues, curValues) => prevValues.role !== curValues.role}>
+                {({ getFieldValue }) => {
+                  const role = getFieldValue('role');
+                  return role === 'CARE_WORKER' ? (
+                    <Form.Item
+                      label="Organization"
+                      name="organizationId"
+                      rules={[{ required: true, message: 'Please select an organization' }]}
+                    >
+                      <Select 
+                        placeholder="Select your organization" 
+                        loading={loadingOrgs}
+                        disabled={organizations.length === 0}
+                        notFoundContent={organizations.length === 0 ? "No organizations available" : "No data"}
+                      >
+                        {organizations.map((org) => (
+                          <Option key={org.id} value={org.id}>
+                            {org.name}
+                          </Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+                  ) : null;
+                }}
               </Form.Item>
 
               <Form.Item>
