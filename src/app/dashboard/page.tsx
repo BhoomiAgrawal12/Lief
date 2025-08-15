@@ -2,11 +2,44 @@
 
 import { useEffect, useState } from 'react';
 import { useUser } from '@auth0/nextjs-auth0/client';
+import { useQuery, gql } from '@apollo/client';
 import { Card, Row, Col, Statistic, Typography, Space, Spin, Alert, Button } from 'antd';
 import { ClockCircleOutlined, TeamOutlined, CalendarOutlined, TrophyOutlined, LogoutOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 
 const { Title } = Typography;
+
+const GET_SHIFT_ANALYTICS = gql`
+  query GetShiftAnalytics {
+    shiftAnalytics {
+      activeShifts
+      totalUsersToday
+      avgHoursPerDay
+      totalHoursThisWeek
+    }
+  }
+`;
+
+const GET_CURRENT_SHIFT = gql`
+  query GetCurrentShift {
+    currentShift {
+      id
+      clockInTime
+      clockInNote
+    }
+  }
+`;
+
+const GET_USER_SHIFTS = gql`
+  query GetUserShifts {
+    shifts {
+      id
+      clockInTime
+      clockOutTime
+      duration
+    }
+  }
+`;
 
 interface UserData {
   id: string;
@@ -16,12 +49,24 @@ interface UserData {
 }
 
 function ManagerDashboard() {
-  const [analytics, setAnalytics] = useState({
+  const { data: analyticsData, loading: analyticsLoading } = useQuery(GET_SHIFT_ANALYTICS, {
+    pollInterval: 30000, // Poll every 30 seconds for real-time updates
+  });
+
+  const analytics = analyticsData?.shiftAnalytics || {
     activeShifts: 0,
     totalUsersToday: 0,
     avgHoursPerDay: 0,
     totalHoursThisWeek: 0
-  });
+  };
+
+  if (analyticsLoading) {
+    return (
+      <div className="p-6 flex justify-center items-center h-64">
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -97,8 +142,19 @@ function ManagerDashboard() {
 }
 
 function CareWorkerDashboard() {
-  const [currentShift, setCurrentShift] = useState(null);
-  const [recentShifts, setRecentShifts] = useState([]);
+  const { data: currentShiftData, loading: currentShiftLoading } = useQuery(GET_CURRENT_SHIFT, {
+    pollInterval: 30000, // Poll every 30 seconds
+  });
+  const { data: shiftsData, loading: shiftsLoading } = useQuery(GET_USER_SHIFTS);
+
+  const currentShift = currentShiftData?.currentShift;
+  const recentShifts = shiftsData?.shifts || [];
+  const thisWeekShifts = recentShifts.filter((shift: any) => {
+    const shiftDate = new Date(shift.clockInTime);
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return shiftDate >= weekAgo;
+  });
 
   return (
     <div className="p-6">
@@ -117,7 +173,7 @@ function CareWorkerDashboard() {
         {currentShift && (
           <Alert
             message="You're currently clocked in"
-            description={`Started at ${new Date().toLocaleString()}`}
+            description={`Started at ${currentShift ? new Date(currentShift.clockInTime).toLocaleString() : 'N/A'}`}
             type="info"
             showIcon
           />
@@ -139,7 +195,7 @@ function CareWorkerDashboard() {
             <Card>
               <Statistic
                 title="Shifts This Week"
-                value={recentShifts.length}
+                value={thisWeekShifts.length}
                 prefix={<CalendarOutlined />}
                 valueStyle={{ color: '#1890ff' }}
               />
